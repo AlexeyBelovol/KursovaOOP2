@@ -1,4 +1,5 @@
 using System.Text;
+using Xceed.Words.NET;
 
 namespace WinFormsApp1
 {
@@ -16,14 +17,16 @@ namespace WinFormsApp1
 
         private void buttonGenerate_Click(object sender, EventArgs e)
         {
-            string[] teams = textBoxTeams.Text.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-            if (teams.Length % 2 != 0)
+            List<Team> teams = textBoxTeams.Text.Split(new[] { Environment.NewLine }, StringSplitOptions.None)
+                                                 .Select(name => new Team(name)).ToList();
+            if (teams.Count % 2 != 0)
             {
-                MessageBox.Show("Ѕудь-ласка введ≥ть парну к≥льк≥сть команд");
+                MessageBox.Show("Please enter an even number of teams.");
                 return;
             }
 
-            string schedule = GenerateRoundRobinSchedule(teams);
+            var scheduler = new RoundRobinScheduler(teams);
+            string schedule = scheduler.GenerateSchedule();
             textBoxSchedule.Text = schedule;
         }
         private string GenerateRoundRobinSchedule(string[] teams)
@@ -54,6 +57,24 @@ namespace WinFormsApp1
             }
 
             return sb.ToString();
+        }
+
+        private void buttonSave_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog
+            {
+                Filter = "Word Document|*.docx",
+                Title = "«бережена таблиц€"
+            };
+
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                using (DocX document = DocX.Create(saveFileDialog.FileName))
+                {
+                    document.InsertParagraph(textBoxSchedule.Text);
+                    document.Save();
+                }
+            }
         }
     }
 }
